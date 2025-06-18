@@ -16,10 +16,9 @@ if not API_KEY:
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
-# File for knowledge base
+# Knowledge base
 KNOWLEDGE_BASE_FILE = 'knowledge_base.txt'
 
-# Flask setup
 app = Flask(__name__)
 CORS(app)
 
@@ -48,7 +47,7 @@ def load_knowledge_base(file_path):
 knowledge_base = load_knowledge_base(KNOWLEDGE_BASE_FILE)
 print(f"MyLEAD loaded {len(knowledge_base)} knowledge entries.")
 
-# Match user queries
+# Match user query
 def retrieve_info(query, kb, top_n=3):
     query_lower = query.lower()
     relevant_info = []
@@ -70,6 +69,7 @@ def ask():
         return jsonify({"response": "Please provide a query."}), 400
 
     context_info = retrieve_info(user_query, knowledge_base)
+
     prompt_parts = [
         "You are MyLEAD, the official tech support AI for LEAD Public Schools.",
         "Respond clearly, helpfully, and refer to LEAD-specific systems.",
@@ -89,10 +89,10 @@ def ask():
         return jsonify({"response": response.text})
     except Exception as e:
         import traceback
-        traceback.print_exc()  # ✅ Print full error in Render logs
+        traceback.print_exc()
         print("Gemini API Error:", e)
         return jsonify({"response": "MyLEAD is currently unavailable. Please try again later."})
 
-# ✅ Render-compatible run configuration
+# Render-compatible Flask run
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=10000, debug=True)
