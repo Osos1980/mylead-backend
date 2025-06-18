@@ -1,42 +1,39 @@
-import google.generativeai as genai
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+import google.generativeai as genai
+from pathlib import Path
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables
+load_dotenv(dotenv_path=Path('.') / '.env')
 
-# --- Configuration ---
+# Configuration
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable not set. Please set it in your .env file.")
+    raise ValueError("GEMINI_API_KEY environment variable not set.")
 
 genai.configure(api_key=API_KEY)
-
-# Initialize the Gemini model
 model = genai.GenerativeModel('gemini-pro')
 KNOWLEDGE_BASE_FILE = 'knowledge_base.txt'
 
-# --- Flask Application Setup ---
+# Flask app setup
 app = Flask(__name__)
 CORS(app)
 
-# --- Load Knowledge Base ---
+# Load knowledge base
 def load_knowledge_base(file_path):
     knowledge = []
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            entries = content.split('---')
+            entries = f.read().split('---')
             for entry in entries:
                 entry = entry.strip()
                 if not entry:
                     continue
                 topic = ""
                 details = ""
-                lines = entry.split('\n')
-                for line in lines:
+                for line in entry.split('\n'):
                     if line.startswith("Topic:"):
                         topic = line.replace("Topic:", "").strip()
                     elif line.startswith("Details:"):
@@ -44,79 +41,57 @@ def load_knowledge_base(file_path):
                 if topic and details:
                     knowledge.append({"topic": topic, "details": details})
     except FileNotFoundError:
-        print(f"Error: Knowledge base file '{file_path}' not found.")
+        print(f"Knowledge base file '{file_path}' not found.")
     return knowledge
 
 knowledge_base = load_knowledge_base(KNOWLEDGE_BASE_FILE)
-print(f"MyLEAD has loaded {len(knowledge_base)} knowledge entries from {KNOWLEDGE_BASE_FILE}.")
+print(f"MyLEAD loaded {len(knowledge_base)} knowledge entries.")
 
-# --- Simple Info Retrieval ---
+# Retrieve info
 def retrieve_info(query, kb, top_n=3):
-    relevant_info = []
     query_lower = query.lower()
+    relevant_info = []
     for entry in kb:
         if any(word in entry['topic'].lower() for word in query_lower.split()) or \
            any(word in entry['details'].lower() for word in query_lower.split()):
             relevant_info.append(entry['details'])
     return list(dict.fromkeys(relevant_info))[:top_n]
 
-# --- Routes ---
+# Routes
 @app.route('/')
 def index():
     return "MyLEAD Flask Backend is running."
 
 @app.route('/ask', methods=['POST'])
-def ask_gemini():
+def ask():
     user_query = request.json.get('query')
     if not user_query:
         return jsonify({"response": "Please provide a query."}), 400
 
     context_info = retrieve_info(user_query, knowledge_base)
-
     prompt_parts = [
-        "You are MyLEAD, the official technology support AI assistant for LEAD Public Schools.",
+        "You are MyLEAD, the official tech support AI for LEAD Public Schools.",
         "- Always refer to yourself as MyLEAD.",
-        "- Respond in a professional, friendly, patient, and helpful tone.",
-        "- All your instructions and troubleshooting steps must be specific to LEAD Public Schools.",
-        "- If an issue cannot be solved with clear steps, recommend submitting a ticket to support@technologylab.com.",
-        "Your areas of expertise include:",
-        "- Addigy MacBook login (password: FirstNameWeAreLEADers100%)",
-        "- Google 2-Step Verification setup & troubleshooting",
-        "- Clever student login (password formula: firstname + lastletter + MMDD + gradyear + !)",
-        "- Chromebook troubleshooting (hard restart: Refresh + Power)",
-        "- SMART Board reset (power toggle switch)",
-        "- Ipevo document camera setup",
-        "- ELPA21 testing support",
-        "- Google Workspace (Gmail, Calendar, Meet, Drive)",
-        "- LEAD-Internal Wi-Fi",
-        "- PrintLogic printers (1-Break Room, 2-Shelby Park, 3-Front Workstation)",
-        "- General technology troubleshooting for LEAD."
+        "- Be professional, friendly, and clear.",
+        "- Recommend contacting support@technologylab.com if unsure.",
+        "Expertise includes MacBooks, Google login, Chromebooks, printers, SMART Boards, and Wi-Fi."
     ]
 
     if context_info:
-        prompt_parts.append("\n\n--- Context from Knowledge Base ---")
+        prompt_parts.append("\n--- Context ---")
         for i, info in enumerate(context_info):
             prompt_parts.append(f"Context {i+1}: {info}")
         prompt_parts.append("--- End Context ---")
-    else:
-        prompt_parts.append("\n\nNo context found for this query. Please answer based on your internal knowledge.")
 
-    prompt_parts.append(f"\nUser Query: {user_query}")
-    prompt_parts.append("Answer:")
-
-    full_prompt = "\n".join(prompt_parts)
-    print("\n--- Prompt Sent to Gemini ---")
-    print(full_prompt)
-    print("--------------------------------\n")
+    prompt_parts.append(f"\nUser Query: {user_query}\nAnswer:")
 
     try:
-        response = model.generate_content(full_prompt)
-        bot_response = response.text
+        response = model.generate_content("\n".join(prompt_parts))
+        return jsonify({"response": response.text})
     except Exception as e:
-        bot_response = f"MyLEAD is experiencing technical difficulties. Please contact support. (Error: {e})"
-        print(f"Gemini API Error: {e}")
+        print("Gemini API Error:", e)
+        return jsonify({"response": "MyLEAD is currently unavailable. Please try again later."})
 
-    return jsonify({"response": bot_response})
-
+# ✅ Run for Render (port + host)
 if __name__ == '__main__':
-app.run(host="0.0.0.0", port=10000, debug=True)
+    app.run(host="0.0.0.0", port=10000, debug=True)
