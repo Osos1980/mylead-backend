@@ -1,0 +1,39 @@
+---
+Topic: Addigy MacBook Login
+Details: First-time users should log in with their LEAD email and the temporary password FirstNameWeAreLEADers100%. This will sync their account with the device.
+
+---
+Topic: Google 2-Step Verification
+Details: Visit https://myaccount.google.com/security and enable 2-Step Verification. Choose SMS or an authenticator app to complete setup.
+
+---
+Topic: Clever Student Login
+Details: The Clever password formula is: firstname + lastletter + MMDD + gradyear + ! (example: johns052524!). For K–2 students, use Clever QR badges.
+
+---
+Topic: Chromebook Restart
+Details: To hard restart a Chromebook, press and hold the Refresh key and tap the Power button.
+
+---
+Topic: SMART Board Reset
+Details: Locate the physical toggle switch on the SMART Board and flip it off, wait 10 seconds, then flip it back on. Recalibrate if needed.
+
+---
+Topic: Ipevo Document Camera Setup
+Details: Connect the Ipevo via USB. Launch the Ipevo Visualizer App and ensure the correct camera is selected under settings.
+
+---
+Topic: PrintLogic Printer Access
+Details: Select a printer by name (e.g., 1-Break Room, 2-Shelby Park) and authenticate using PaperCut. If the popup doesn't appear, restart the device.
+
+---
+Topic: ELPA21 Testing Support
+Details: Ensure Chromebook is in kiosk mode. Check audio output, keyboard functionality, and screen resolution before testing begins.
+
+---
+Topic: Google Workspace Best Practices
+Details: Use Drive folders to organize files. Apply Gmail filters and labels. Integrate Calendar with Google Meet for scheduling.
+
+---
+Topic: LEAD Wi-Fi Networks
+Details: Staff should connect to LEAD-Internal. If having trouble, forget and reconnect, or reboot the device.
