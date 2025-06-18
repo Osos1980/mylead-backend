@@ -5,14 +5,16 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from pathlib import Path
 
+# Load .env variables (optional for local use)
 load_dotenv(dotenv_path=Path('.') / '.env')
 
+# Gemini setup
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable not set.")
+    raise ValueError("GEMINI_API_KEY not set")
 
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel(model_name="gemini-pro")
 
 app = Flask(__name__)
 CORS(app)
