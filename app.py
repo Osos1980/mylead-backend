@@ -8,16 +8,18 @@ from pathlib import Path
 # Load environment variables
 load_dotenv(dotenv_path=Path('.') / '.env')
 
-# Configuration
+# Configure Gemini API
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable not set.")
 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
+
+# File for knowledge base
 KNOWLEDGE_BASE_FILE = 'knowledge_base.txt'
 
-# Flask app setup
+# Flask setup
 app = Flask(__name__)
 CORS(app)
 
@@ -31,8 +33,7 @@ def load_knowledge_base(file_path):
                 entry = entry.strip()
                 if not entry:
                     continue
-                topic = ""
-                details = ""
+                topic, details = "", ""
                 for line in entry.split('\n'):
                     if line.startswith("Topic:"):
                         topic = line.replace("Topic:", "").strip()
@@ -47,7 +48,7 @@ def load_knowledge_base(file_path):
 knowledge_base = load_knowledge_base(KNOWLEDGE_BASE_FILE)
 print(f"MyLEAD loaded {len(knowledge_base)} knowledge entries.")
 
-# Retrieve info
+# Match user queries
 def retrieve_info(query, kb, top_n=3):
     query_lower = query.lower()
     relevant_info = []
@@ -71,14 +72,12 @@ def ask():
     context_info = retrieve_info(user_query, knowledge_base)
     prompt_parts = [
         "You are MyLEAD, the official tech support AI for LEAD Public Schools.",
-        "- Always refer to yourself as MyLEAD.",
-        "- Be professional, friendly, and clear.",
-        "- Recommend contacting support@technologylab.com if unsure.",
-        "Expertise includes MacBooks, Google login, Chromebooks, printers, SMART Boards, and Wi-Fi."
+        "Respond clearly, helpfully, and refer to LEAD-specific systems.",
+        "If unsure, advise users to email support@technologylab.com.",
     ]
 
     if context_info:
-        prompt_parts.append("\n--- Context ---")
+        prompt_parts.append("\n--- Context from Knowledge Base ---")
         for i, info in enumerate(context_info):
             prompt_parts.append(f"Context {i+1}: {info}")
         prompt_parts.append("--- End Context ---")
@@ -89,9 +88,11 @@ def ask():
         response = model.generate_content("\n".join(prompt_parts))
         return jsonify({"response": response.text})
     except Exception as e:
+        import traceback
+        traceback.print_exc()  # ✅ Print full error in Render logs
         print("Gemini API Error:", e)
         return jsonify({"response": "MyLEAD is currently unavailable. Please try again later."})
 
-# ✅ Run for Render (port + host)
+# ✅ Render-compatible run configuration
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=10000, debug=True)
