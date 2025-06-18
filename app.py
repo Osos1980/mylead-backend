@@ -1,4 +1,3 @@
-# Trigger redeploy
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -6,7 +5,6 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from pathlib import Path
 
-# Load .env variables (optional for local testing)
 load_dotenv(dotenv_path=Path('.') / '.env')
 
 API_KEY = os.getenv("GEMINI_API_KEY")
@@ -14,8 +12,6 @@ if not API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable not set.")
 
 genai.configure(api_key=API_KEY)
-
-# ✅ Use chat-bison (supported in v0.8.5)
 model = genai.GenerativeModel(model_name="chat-bison")
 
 app = Flask(__name__)
