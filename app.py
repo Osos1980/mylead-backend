@@ -11,13 +11,6 @@ CORS(app)
 MODEL = "models/gemini-2.5-pro"
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-def get_first_name(name_or_email):
-    if not name_or_email:
-        return ""
-    if "@" in name_or_email:
-        return name_or_email.split("@")[0].split(".")[0].capitalize()
-    return name_or_email.split()[0].capitalize()
-
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
@@ -27,37 +20,24 @@ def ask():
     try:
         data = request.get_json()
         user_query = data.get("query", "")
-        name_input = data.get("name", "")
         first_message = data.get("firstMessage", False)
-        first_name = get_first_name(name_input)
 
-        print("Received name from frontend:", name_input, file=sys.stderr, flush=True)
-        print("Extracted first name:", first_name, file=sys.stderr, flush=True)
-
-        # Personalized greeting only for the first message
+        # Greeting for the first message ONLY
         if first_message:
-            if first_name:
-                greeting = (
-                    f"Hi {first_name}! I’m MyLEAD, your trusted support partner at LEAD. "
-                    "I’m here to help with technology, benefits, or questions about our official policies. How can I support you today?"
-                )
-            else:
-                greeting = (
-                    "Hi there! I’m MyLEAD, your trusted support partner at LEAD. "
-                    "I’m here to help with technology, benefits, or questions about our official policies. How can I support you today?"
-                )
+            greeting = "Hello, I’m MyLEAD, your trusted support partner at LEAD Public Schools. How can I help you today?"
             system_instructions = (
                 f"{greeting}\n\n"
-                "As a professional AI assistant for LEAD Public Schools, you provide clear, accurate, and friendly help on technology issues, employee benefits, and official staff policies. "
-                "Support only LEAD staff and teachers. If unsure, advise the user to email support@technologylab.com (tech) or hradp@leadpublicschools.org (HR/benefits). "
-                "Do not answer questions for students or families. Always be concise, solution-focused, and reference official LEAD resources."
+                "You are a professional AI assistant for LEAD Public Schools. "
+                "You provide clear, accurate, and friendly help for technology issues, employee benefits, and official staff policies. "
+                "Support only LEAD staff and teachers. If you do not know the answer, direct the user to support@technologylab.com (tech) or hradp@leadpublicschools.org (HR/benefits). "
+                "Never answer questions for students or families. Always be concise, solution-focused, and reference official LEAD resources."
             )
         else:
             system_instructions = (
                 "You are MyLEAD, the professional AI support assistant for LEAD Public Schools. "
                 "Provide clear, concise, and accurate help with technology, employee benefits, and official staff policies. "
                 "Support only LEAD staff and teachers. If a question is outside your scope, direct users to support@technologylab.com (tech) or hradp@leadpublicschools.org (HR/benefits). "
-                "Do not answer questions for students or families. Be solution-focused and always reference official LEAD resources and policies."
+                "Never answer questions for students or families. Be solution-focused and always reference official LEAD resources and policies."
             )
 
         if not user_query:
