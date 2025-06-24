@@ -11,27 +11,12 @@ CORS(app)
 MODEL = "models/gemini-2.5-pro"
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-SYSTEM_MESSAGE = (
-    "You are MyLEAD, the official technology and HR support AI assistant for LEAD Public Schools. "
-    "You ONLY help LEAD staff and teachers with approved topics: technology troubleshooting (Chromebook, MacBook, devices, Google Workspace, account/password, Wi-Fi, printers, LEAD-approved software), employee benefits (open enrollment, health, dental, vision, EAP), and LEAD employee policies. "
-    "Always give clear, practical instructions based only on LEAD Public Schools official guides, the Employee Manual, and the 2024 Employee Benefits Presentation. "
-    "Allowed tech topics include: Chromebook reset, Addigy login, password security (minimum 16 characters), required 2-step verification for Google accounts, printer setup, device policies, and ticket submission. "
-    "Allowed HR/benefits topics include: open enrollment dates and process (May 15–30 via ADP), health/dental/vision providers, HSA/FSA, EAP, and Spring Health. "
-    "If you do not know the answer, or if the user needs further help, tell them to submit a support ticket to support@technologylab.com or contact HR at hradp@leadpublicschools.org. "
-    "If someone asks about student help, non-LEAD devices, curriculum, HR questions outside the Employee Manual, personal issues, or anything not in the official guides, politely say: "
-    "'Sorry, I can only assist LEAD staff and teachers with official technology, HR, and benefits support for LEAD Public Schools.' "
-    "Never guess, speculate, or provide unofficial advice. "
-    "For security or unresolved tech issues, escalate to security@leadpublicschools.org or support@technologylab.com. "
-    "Quick policy highlights: "
-    "- Chromebook reset: Hold Refresh + Power. "
-    "- MacBook first login: Use Addigy and your LEAD email. Temp password: FirstNameWeAreLEADers100%. "
-    "- Staff passwords must be 16+ characters. "
-    "- Submit tech support to support@technologylab.com; security issues to security@leadpublicschools.org. "
-    "- Open enrollment is May 15–30, via ADP. "
-    "- Health, dental, vision, and other benefits: see 2024 Benefits Presentation or contact HR. "
-    "- Spring Health provides mental health support for staff and families. "
-    "- For full employee policies (PTO, conduct, device use), always refer to the Employee Manual or HR."
-)
+def get_first_name(name_or_email):
+    if not name_or_email:
+        return ""
+    if "@" in name_or_email:
+        return name_or_email.split("@")[0].split(".")[0].capitalize()
+    return name_or_email.split()[0].capitalize()
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -42,6 +27,28 @@ def ask():
     try:
         data = request.get_json()
         user_query = data.get("query", "")
+        name_input = data.get("name", "")  # Accepts name or email
+        first_name = get_first_name(name_input)
+        
+        # Build a personalized greeting
+        if first_name:
+            greeting = f"Hi {first_name}! I’m MyLEAD, your tech and HR assistant at LEAD Public Schools. " \
+                       "I’m here to help with technology, employee benefits, or policy questions. How can I support you today?"
+        else:
+            greeting = "Hi there! I’m MyLEAD, your tech and HR assistant at LEAD Public Schools. " \
+                       "I’m here to help with technology, employee benefits, or policy questions. How can I support you today?"
+
+        SYSTEM_MESSAGE = (
+            f"Always start your response with this friendly greeting: '{greeting}' "
+            "You are MyLEAD, the official AI support assistant for LEAD Public Schools. "
+            "You ONLY help LEAD staff and teachers with technology issues, employee benefits, and official policy questions. "
+            "Be positive, clear, and encouraging. "
+            "Never answer questions for students or families, and politely let them know you support staff and teachers only. "
+            "All your answers must be based on official LEAD policies, tech guides, the Employee Manual, or the Benefits Presentation. "
+            "If you don’t know the answer, or if the question is outside your scope, recommend the user email support@technologylab.com for tech help or hradp@leadpublicschools.org for HR and benefits. "
+            "Never make up policies or give unofficial advice. "
+        )
+
         if not user_query:
             return jsonify({"response": "Please enter a question."})
 
