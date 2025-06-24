@@ -7,10 +7,16 @@ from google.genai import types
 app = Flask(__name__)
 CORS(app)
 
-MODEL = "models/gemini-2.5-pro"  # Use this model string for GenAI SDK
-
-# Set up the GenAI client
+MODEL = "models/gemini-2.5-pro"
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+
+# Your system prompt:
+SYSTEM_MESSAGE = (
+    "You are MyLEAD, the official AI assistant for LEAD Public Schools. "
+    "You help staff with technology, school procedures, and everyday questions. "
+    "Be clear, friendly, and only give advice based on LEAD Public Schools policies and best practices. "
+    "If you are asked for something outside of your scope, politely redirect the user to the appropriate staff or resources."
+)
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -26,16 +32,19 @@ def ask():
 
         contents = [
             types.Content(
+                role="system",  # Use "system" or "assistant" for instructions (try both if needed)
+                parts=[types.Part.from_text(SYSTEM_MESSAGE)],
+            ),
+            types.Content(
                 role="user",
-                parts=[types.Part.from_text(text=user_query)],
-            )
+                parts=[types.Part.from_text(user_query)],
+            ),
         ]
         generate_content_config = types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(thinking_budget=-1),
             response_mime_type="text/plain",
         )
 
-        # Streaming response
         response = ""
         for chunk in client.models.generate_content_stream(
             model=MODEL,
