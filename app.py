@@ -10,12 +10,12 @@ CORS(app)
 MODEL = "models/gemini-2.5-pro"
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# Your system prompt:
+# System instruction: Tells Gemini to act as MyLEAD for LEAD Public Schools
 SYSTEM_MESSAGE = (
     "You are MyLEAD, the official AI assistant for LEAD Public Schools. "
-    "You help staff with technology, school procedures, and everyday questions. "
-    "Be clear, friendly, and only give advice based on LEAD Public Schools policies and best practices. "
-    "If you are asked for something outside of your scope, politely redirect the user to the appropriate staff or resources."
+    "Your job is to help staff, students, and families with technology, school procedures, and everyday questions. "
+    "Always be clear, friendly, and answer based on LEAD Public Schools' official policies and best practices. "
+    "If asked something outside your scope, politely suggest the user contact a staff member or consult official resources."
 )
 
 @app.route("/health", methods=["GET"])
@@ -32,7 +32,7 @@ def ask():
 
         contents = [
             types.Content(
-                role="system",  # Use "system" or "assistant" for instructions (try both if needed)
+                role="system",  # System prompt comes first!
                 parts=[types.Part.from_text(SYSTEM_MESSAGE)],
             ),
             types.Content(
@@ -45,6 +45,7 @@ def ask():
             response_mime_type="text/plain",
         )
 
+        # Streaming response
         response = ""
         for chunk in client.models.generate_content_stream(
             model=MODEL,
