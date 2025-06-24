@@ -22,38 +22,34 @@ def ask():
         user_query = data.get("query", "")
         first_message = data.get("firstMessage", False)
 
-        # Greeting for the first message ONLY
-        if first_message:
-            greeting = "Hello, I’m MyLEAD, your trusted support partner at LEAD Public Schools. How can I help you today?"
-            system_instructions = (
-                f"{greeting}\n\n"
-                "You are a professional AI assistant for LEAD Public Schools. "
-                "You provide clear, accurate, and friendly help for technology issues, employee benefits, and official staff policies. "
-                "Support only LEAD staff and teachers. If you do not know the answer, direct the user to support@technologylab.com (tech) or hradp@leadpublicschools.org (HR/benefits). "
-                "Never answer questions for students or families. Always be concise, solution-focused, and reference official LEAD resources."
-            )
-        else:
-            system_instructions = (
-                "You are MyLEAD, the professional AI support assistant for LEAD Public Schools. "
-                "Provide clear, concise, and accurate help with technology, employee benefits, and official staff policies. "
-                "Support only LEAD staff and teachers. If a question is outside your scope, direct users to support@technologylab.com (tech) or hradp@leadpublicschools.org (HR/benefits). "
-                "Never answer questions for students or families. Be solution-focused and always reference official LEAD resources and policies."
-            )
-
         if not user_query:
             return jsonify({"response": "Please enter a question."})
 
+        # First-message system prompt: Friendly greeting + scope
+        if first_message:
+            greeting = (
+                "Hello, I’m MyLEAD, your trusted support partner at LEAD Public Schools. How can I help you today?"
+            )
+            system_instructions = (
+                f"{greeting}\n\n"
+                "You are a professional AI assistant for LEAD Public Schools. "
+                "Provide clear, accurate, and friendly help on technology, employee benefits, and official staff policies for LEAD staff and teachers only. "
+                "If you do not know the answer or the question is out of scope, direct the user to support@technologylab.com (tech) or hradp@leadpublicschools.org (HR/benefits). "
+                "For follow-up questions, do not repeat your introduction or scope—just give direct, helpful answers."
+            )
+        # All follow-ups: Solution-focused, no greeting or intro
+        else:
+            system_instructions = (
+                "You are MyLEAD, the professional AI assistant for LEAD Public Schools. "
+                "For this and all follow-up messages, respond directly and concisely using only official LEAD resources and policies. "
+                "Do not repeat introductions, disclaimers, or your scope. "
+                "If a question is out of scope or cannot be answered, politely direct the user to support@technologylab.com (for tech) or hradp@leadpublicschools.org (for HR/benefits)."
+            )
+
         contents = [
-            types.Content(
-                role="user",
-                parts=[types.Part(text=system_instructions)],
-            ),
-            types.Content(
-                role="user",
-                parts=[types.Part(text=user_query)],
-            ),
+            types.Content(role="user", parts=[types.Part(text=system_instructions)]),
+            types.Content(role="user", parts=[types.Part(text=user_query)]),
         ]
-        print("About to send prompt to Gemini:", contents, file=sys.stderr, flush=True)
 
         generate_content_config = types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(thinking_budget=-1),
@@ -69,7 +65,6 @@ def ask():
             if chunk.text:
                 response_text += chunk.text
 
-        print("Raw Gemini response:", response_text, file=sys.stderr, flush=True)
         return jsonify({"response": response_text.strip()})
 
     except Exception as e:
