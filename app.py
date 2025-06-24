@@ -12,6 +12,7 @@ MODEL = "models/gemini-2.5-pro"
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 def get_first_name(name_or_email):
+    """Extracts first name from full name or email."""
     if not name_or_email:
         return ""
     if "@" in name_or_email:
@@ -27,17 +28,26 @@ def ask():
     try:
         data = request.get_json()
         user_query = data.get("query", "")
-        name_input = data.get("name", "")  # Accepts name or email
+        name_input = data.get("name", "")  # First name or email sent from frontend
         first_name = get_first_name(name_input)
-        
-        # Build a personalized greeting
-        if first_name:
-            greeting = f"Hi {first_name}! I’m MyLEAD, your tech and HR assistant at LEAD Public Schools. " \
-                       "I’m here to help with technology, employee benefits, or policy questions. How can I support you today?"
-        else:
-            greeting = "Hi there! I’m MyLEAD, your tech and HR assistant at LEAD Public Schools. " \
-                       "I’m here to help with technology, employee benefits, or policy questions. How can I support you today?"
 
+        # Print debug info to logs for troubleshooting
+        print("Received name from frontend:", name_input, file=sys.stderr, flush=True)
+        print("Extracted first name:", first_name, file=sys.stderr, flush=True)
+
+        # Personalized greeting
+        if first_name:
+            greeting = (
+                f"Hi {first_name}! I’m MyLEAD, your smart support companion at LEAD. "
+                "I’m here to help with technology, or questions about our official policies and benefits. How can I support you today?"
+            )
+        else:
+            greeting = (
+                "Hi there! I’m MyLEAD, your trusted support partner at LEAD. "
+                "I’m here to help with technology, benefits, or questions about our official policies. How can I support you today?"
+            )
+
+        # Full system message for Gemini
         SYSTEM_MESSAGE = (
             f"Always start your response with this friendly greeting: '{greeting}' "
             "You are MyLEAD, the official AI support assistant for LEAD Public Schools. "
