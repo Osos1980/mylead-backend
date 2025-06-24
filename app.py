@@ -12,7 +12,6 @@ MODEL = "models/gemini-2.5-pro"
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 def get_first_name(name_or_email):
-    """Extracts first name from full name or email."""
     if not name_or_email:
         return ""
     if "@" in name_or_email:
@@ -28,36 +27,38 @@ def ask():
     try:
         data = request.get_json()
         user_query = data.get("query", "")
-        name_input = data.get("name", "")  # First name or email sent from frontend
+        name_input = data.get("name", "")
+        first_message = data.get("firstMessage", False)
         first_name = get_first_name(name_input)
 
-        # Print debug info to logs for troubleshooting
         print("Received name from frontend:", name_input, file=sys.stderr, flush=True)
         print("Extracted first name:", first_name, file=sys.stderr, flush=True)
 
-        # Personalized greeting
-        if first_name:
-            greeting = (
-                f"Hi {first_name}! I’m MyLEAD, your smart support companion at LEAD. "
-                "I’m here to help with technology, or questions about our official policies and benefits. How can I support you today?"
+        # Personalized greeting only for the first message
+        if first_message:
+            if first_name:
+                greeting = (
+                    f"Hi {first_name}! I’m MyLEAD, your trusted support partner at LEAD. "
+                    "I’m here to help with technology, benefits, or questions about our official policies. How can I support you today?"
+                )
+            else:
+                greeting = (
+                    "Hi there! I’m MyLEAD, your trusted support partner at LEAD. "
+                    "I’m here to help with technology, benefits, or questions about our official policies. How can I support you today?"
+                )
+            system_instructions = (
+                f"{greeting}\n\n"
+                "As a professional AI assistant for LEAD Public Schools, you provide clear, accurate, and friendly help on technology issues, employee benefits, and official staff policies. "
+                "Support only LEAD staff and teachers. If unsure, advise the user to email support@technologylab.com (tech) or hradp@leadpublicschools.org (HR/benefits). "
+                "Do not answer questions for students or families. Always be concise, solution-focused, and reference official LEAD resources."
             )
         else:
-            greeting = (
-                "Hi there! I’m MyLEAD, your trusted support partner at LEAD. "
-                "I’m here to help with technology, benefits, or questions about our official policies. How can I support you today?"
+            system_instructions = (
+                "You are MyLEAD, the professional AI support assistant for LEAD Public Schools. "
+                "Provide clear, concise, and accurate help with technology, employee benefits, and official staff policies. "
+                "Support only LEAD staff and teachers. If a question is outside your scope, direct users to support@technologylab.com (tech) or hradp@leadpublicschools.org (HR/benefits). "
+                "Do not answer questions for students or families. Be solution-focused and always reference official LEAD resources and policies."
             )
-
-        # Full system message for Gemini
-        SYSTEM_MESSAGE = (
-            f"Always start your response with this friendly greeting: '{greeting}' "
-            "You are MyLEAD, the official AI support assistant for LEAD Public Schools. "
-            "You ONLY help LEAD staff and teachers with technology issues, employee benefits, and official policy questions. "
-            "Be positive, clear, and encouraging. "
-            "Never answer questions for students or families, and politely let them know you support staff and teachers only. "
-            "All your answers must be based on official LEAD policies, tech guides, the Employee Manual, or the Benefits Presentation. "
-            "If you don’t know the answer, or if the question is outside your scope, recommend the user email support@technologylab.com for tech help or hradp@leadpublicschools.org for HR and benefits. "
-            "Never make up policies or give unofficial advice. "
-        )
 
         if not user_query:
             return jsonify({"response": "Please enter a question."})
@@ -65,7 +66,7 @@ def ask():
         contents = [
             types.Content(
                 role="user",
-                parts=[types.Part(text=SYSTEM_MESSAGE)],
+                parts=[types.Part(text=system_instructions)],
             ),
             types.Content(
                 role="user",
