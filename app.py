@@ -6,10 +6,10 @@ import google.generativeai as genai
 app = Flask(__name__)
 CORS(app)
 
-# Load your Gemini API key from the environment
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+# Get Gemini API Key from environment variable
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
 if not GOOGLE_API_KEY:
-    raise RuntimeError("GOOGLE_API_KEY environment variable not set")
+    raise RuntimeError("GOOGLE_API_KEY or GEMINI_API_KEY environment variable not set")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 MODEL = "gemini-1.0-pro"
@@ -20,18 +20,23 @@ def health():
 
 @app.route("/ask", methods=["POST"])
 def ask():
+    import traceback
     try:
         data = request.get_json()
         user_query = data.get("query", "")
         if not user_query:
             return jsonify({"response": "Please enter a question."})
 
-        # Generate a Gemini response
-        response = genai.GenerativeModel(MODEL).generate_content(user_query)
+        print("Got user query:", user_query)
+        model = genai.GenerativeModel(MODEL)
+        response = model.generate_content(user_query)
+        print("Gemini API raw response:", response)
         answer = response.text.strip() if hasattr(response, "text") else str(response)
+        print("Gemini extracted answer:", answer)
         return jsonify({"response": answer})
     except Exception as e:
         print("Error:", e)
+        traceback.print_exc()
         return jsonify({"response": "MyLEAD is currently unavailable. Please try again later."}), 200
 
 if __name__ == "__main__":
