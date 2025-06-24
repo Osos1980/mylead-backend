@@ -1,12 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import traceback
-from vertexai.preview.generative_models import GenerativeModel
+import os
+from google import genai
+from google.genai import types
 
 app = Flask(__name__)
 CORS(app)
 
-MODEL = "gemini-1.0-pro"
+MODEL = "models/gemini-2.5-pro"  # Use this model string for GenAI SDK
+
+# Set up the GenAI client
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -19,15 +23,32 @@ def ask():
         user_query = data.get("query", "")
         if not user_query:
             return jsonify({"response": "Please enter a question."})
-        model = GenerativeModel(MODEL)
-        chat = model.start_chat()
-        response = chat.send_message(user_query)
-        answer = response.text if hasattr(response, "text") else str(response)
-        print("Gemini Vertex AI response:", answer)
-        return jsonify({"response": answer})
+
+        contents = [
+            types.Content(
+                role="user",
+                parts=[types.Part.from_text(text=user_query)],
+            )
+        ]
+        generate_content_config = types.GenerateContentConfig(
+            thinking_config=types.ThinkingConfig(thinking_budget=-1),
+            response_mime_type="text/plain",
+        )
+
+        # Streaming response
+        response = ""
+        for chunk in client.models.generate_content_stream(
+            model=MODEL,
+            contents=contents,
+            config=generate_content_config,
+        ):
+            if chunk.text:
+                response += chunk.text
+
+        return jsonify({"response": response.strip()})
+
     except Exception as e:
         print("Error:", e)
-        traceback.print_exc()
         return jsonify({"response": "MyLEAD is currently unavailable. Please try again later."}), 200
 
 if __name__ == "__main__":
