@@ -30,15 +30,15 @@ def ask():
         if not user_query:
             return jsonify({"response": "Please enter a question."})
 
-        # Compose prompt: context (as user) + actual user question
+        # Use types.Part(text=...) instead of from_text()
         contents = [
             types.Content(
-                role="user",  # Use "user" for both to ensure compatibility
-                parts=[types.Part.from_text(SYSTEM_MESSAGE)],
+                role="user",
+                parts=[types.Part(text=SYSTEM_MESSAGE)],
             ),
             types.Content(
                 role="user",
-                parts=[types.Part.from_text(user_query)],
+                parts=[types.Part(text=user_query)],
             ),
         ]
         print("About to send prompt to Gemini:", contents, file=sys.stderr, flush=True)
