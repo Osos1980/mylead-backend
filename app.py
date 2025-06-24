@@ -6,13 +6,13 @@ import google.generativeai as genai
 app = Flask(__name__)
 CORS(app)
 
-# Get Gemini API Key from environment variable
+# Try to get the API key from environment
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
 if not GOOGLE_API_KEY:
     raise RuntimeError("GOOGLE_API_KEY or GEMINI_API_KEY environment variable not set")
 genai.configure(api_key=GOOGLE_API_KEY)
 
-MODEL = "gemini-1.0-pro"
+MODEL = "gemini-pro"  # Use 'gemini-pro' for google-generativeai
 
 @app.route("/health", methods=["GET"])
 def health():
