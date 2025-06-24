@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
+import sys
 from google import genai
 from google.genai import types
 
@@ -10,7 +11,6 @@ CORS(app)
 MODEL = "models/gemini-2.5-pro"
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# System instruction: Tells Gemini to act as MyLEAD for LEAD Public Schools
 SYSTEM_MESSAGE = (
     "You are MyLEAD, the official AI assistant for LEAD Public Schools. "
     "Your job is to help staff, students, and families with technology, school procedures, and everyday questions. "
@@ -30,9 +30,10 @@ def ask():
         if not user_query:
             return jsonify({"response": "Please enter a question."})
 
+        # Compose prompt: context (as user) + actual user question
         contents = [
             types.Content(
-                role="system",  # System prompt comes first!
+                role="user",  # Use "user" for both to ensure compatibility
                 parts=[types.Part.from_text(SYSTEM_MESSAGE)],
             ),
             types.Content(
@@ -40,25 +41,29 @@ def ask():
                 parts=[types.Part.from_text(user_query)],
             ),
         ]
+        print("About to send prompt to Gemini:", contents, file=sys.stderr, flush=True)
+
         generate_content_config = types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(thinking_budget=-1),
             response_mime_type="text/plain",
         )
 
-        # Streaming response
-        response = ""
+        response_text = ""
         for chunk in client.models.generate_content_stream(
             model=MODEL,
             contents=contents,
             config=generate_content_config,
         ):
             if chunk.text:
-                response += chunk.text
+                response_text += chunk.text
 
-        return jsonify({"response": response.strip()})
+        print("Raw Gemini response:", response_text, file=sys.stderr, flush=True)
+        return jsonify({"response": response_text.strip()})
 
     except Exception as e:
-        print("Error:", e)
+        print("Error:", e, file=sys.stderr, flush=True)
+        import traceback
+        traceback.print_exc()
         return jsonify({"response": "MyLEAD is currently unavailable. Please try again later."}), 200
 
 if __name__ == "__main__":
